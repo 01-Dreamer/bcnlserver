@@ -1,0 +1,91 @@
+package zxylearn.bcnlserver.pojo.document;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Document(indexName = "tweet")
+public class TweetDoc {
+    @Id
+    private Long id;
+
+    @Field(type = FieldType.Keyword)
+    private Long teamId;
+
+    @Field(type = FieldType.Keyword)
+    private Long senderId;
+
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second_millis)
+    private LocalDateTime createTime;
+
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
+    private String title;
+
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
+    private String content;
+    
+    @Field(type = FieldType.Keyword, index = false)
+    private List<String> images;
+}
+
+/*
+PUT /tweet
+{
+  "settings": {
+    "index": {
+      "analysis": {
+        "analyzer": {
+          "default": {
+            "type": "ik_max_word"
+          }
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "long"
+      },
+      "teamId": {
+        "type": "keyword"
+      },
+      "senderId": {
+        "type": "keyword"
+      },
+      "createTime": {
+        "type": "date",
+        "format": "yyyy-MM-dd HH:mm:ss"
+      },
+      "title": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "images": {
+        "type": "keyword",
+        "index": false
+      }
+    }
+  }
+}
+*/
