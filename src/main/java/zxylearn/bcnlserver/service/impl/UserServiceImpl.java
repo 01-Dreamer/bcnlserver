@@ -2,7 +2,6 @@ package zxylearn.bcnlserver.service.impl;
 
 import zxylearn.bcnlserver.pojo.entity.User;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
