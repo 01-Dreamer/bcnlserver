@@ -13,6 +13,8 @@ import zxylearn.bcnlserver.utils.JwtUtil;
 public class RedisService {
 
     private static String JWT_BLACK = "jwt:black:";
+    private static String IMAGE_CAPTCHA = "image:captcha:";
+    private static String EMAIL_CAPTCHA = "email:captcha:";
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -48,8 +50,8 @@ public class RedisService {
         if(uuid == null || code == null) {
             return false;
         }
-        String key = "image_captcha:" + uuid;
-        redisTemplate.opsForValue().set(key, code, 180, TimeUnit.SECONDS);
+        String key = IMAGE_CAPTCHA + uuid;
+        redisTemplate.opsForValue().set(key, code, 300, TimeUnit.SECONDS);
         return true;
     }
 
@@ -58,7 +60,7 @@ public class RedisService {
         if(uuid == null || code == null) {
             return false;
         }
-        String key = "image_captcha:" + uuid;
+        String key = IMAGE_CAPTCHA + uuid;
         String cachedCode = (String) redisTemplate.opsForValue().get(key);
         if(cachedCode == null) {
             return false;
@@ -75,7 +77,7 @@ public class RedisService {
         if(email == null || code == null) {
             return false;
         }
-        String key = "email_captcha:" + email;
+        String key = EMAIL_CAPTCHA + email;
         redisTemplate.opsForValue().set(key, code, 300, TimeUnit.SECONDS);
         return true;
     }
@@ -85,7 +87,7 @@ public class RedisService {
         if(email == null) {
             return -2L;
         }
-        String key = "email_captcha:" + email;
+        String key = EMAIL_CAPTCHA + email;
         Long ttl = redisTemplate.getExpire(key);
         return ttl != null ? ttl : -2L;
     }
@@ -95,7 +97,7 @@ public class RedisService {
         if(email == null || code == null) {
             return false;
         }
-        String key = "email_captcha:" + email;
+        String key = EMAIL_CAPTCHA + email;
         String cachedCode = (String) redisTemplate.opsForValue().get(key);
         if(cachedCode == null) {
             return false;

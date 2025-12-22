@@ -29,6 +29,9 @@ public class User {
     @TableField(value = "email")
     private String email;
 
+    @TableField(value = "name")
+    private String name;
+
     @TableField(value = "avatar")
     private String avatar;
 

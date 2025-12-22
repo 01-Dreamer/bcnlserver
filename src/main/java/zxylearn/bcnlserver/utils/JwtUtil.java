@@ -24,6 +24,9 @@ public class JwtUtil {
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
 
+    public static String ADMIN = "ADMIN";
+    public static String USER = "USER";
+
     // 生成令牌
     public String generateToken(String userId, String role) {
         Map<String, Object> claims = Map.of("role", role);
