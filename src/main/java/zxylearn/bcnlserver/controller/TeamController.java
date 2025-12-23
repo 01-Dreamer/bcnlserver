@@ -357,5 +357,4 @@ public class TeamController {
 
         return ResponseEntity.ok(Map.of("teamMember", teamMember));
     }
-    
 }

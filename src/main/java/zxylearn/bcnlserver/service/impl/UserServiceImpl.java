@@ -1,6 +1,10 @@
 package zxylearn.bcnlserver.service.impl;
 
+import zxylearn.bcnlserver.pojo.DTO.UserSearchRequestDTO;
 import zxylearn.bcnlserver.pojo.entity.User;
+
+import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -37,7 +41,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public User getUserByUsernameOrEmail(String username) {
-        if(username == null || username.isEmpty()) {
+        if (username == null || username.isEmpty()) {
             return null;
         }
         return getOne(new LambdaQueryWrapper<User>()
@@ -45,4 +49,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .or()
                 .eq(User::getEmail, username));
     }
+
+    @Override
+    public List<User> searchUserList(UserSearchRequestDTO userSearchRequestDTO) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        LocalDate now = LocalDate.now();
+
+        if (userSearchRequestDTO.getMinAge() != null) {
+            wrapper.le(User::getBirthday, now.minusYears(userSearchRequestDTO.getMinAge()));
+        }
+        if (userSearchRequestDTO.getMaxAge() != null) {
+            wrapper.ge(User::getBirthday, now.minusYears(userSearchRequestDTO.getMaxAge() + 1).plusDays(1));
+        }
+
+        boolean hasCriteria = userSearchRequestDTO.getId() != null ||
+                              userSearchRequestDTO.getUsername() != null ||
+                              userSearchRequestDTO.getEmail() != null ||
+                              userSearchRequestDTO.getName() != null ||
+                              userSearchRequestDTO.getPrefixName() != null ||
+                              userSearchRequestDTO.getSuffixName() != null ||
+                              userSearchRequestDTO.getPhone() != null ||
+                              userSearchRequestDTO.getGender() != null ||
+                              userSearchRequestDTO.getAddress() != null;
+
+        if (hasCriteria) {
+            if (Boolean.TRUE.equals(userSearchRequestDTO.getMatchAll())) {
+                wrapper.eq(userSearchRequestDTO.getId() != null, User::getId, userSearchRequestDTO.getId())
+                       .eq(userSearchRequestDTO.getUsername() != null, User::getUsername, userSearchRequestDTO.getUsername())
+                       .eq(userSearchRequestDTO.getEmail() != null, User::getEmail, userSearchRequestDTO.getEmail())
+                       .like(userSearchRequestDTO.getName() != null, User::getName, userSearchRequestDTO.getName())
+                       .likeRight(userSearchRequestDTO.getPrefixName() != null, User::getName, userSearchRequestDTO.getPrefixName())
+                       .likeLeft(userSearchRequestDTO.getSuffixName() != null, User::getName, userSearchRequestDTO.getSuffixName())
+                       .like(userSearchRequestDTO.getPhone() != null, User::getPhone, userSearchRequestDTO.getPhone())
+                       .eq(userSearchRequestDTO.getGender() != null, User::getGender, userSearchRequestDTO.getGender())
+                       .like(userSearchRequestDTO.getAddress() != null, User::getAddress, userSearchRequestDTO.getAddress());
+            } else {
+                wrapper.and(w -> w
+                       .or(userSearchRequestDTO.getId() != null, i -> i.eq(User::getId, userSearchRequestDTO.getId()))
+                       .or(userSearchRequestDTO.getUsername() != null, i -> i.eq(User::getUsername, userSearchRequestDTO.getUsername()))
+                       .or(userSearchRequestDTO.getEmail() != null, i -> i.eq(User::getEmail, userSearchRequestDTO.getEmail()))
+                       .or(userSearchRequestDTO.getName() != null, i -> i.like(User::getName, userSearchRequestDTO.getName()))
+                       .or(userSearchRequestDTO.getPrefixName() != null, i -> i.likeRight(User::getName, userSearchRequestDTO.getPrefixName()))
+                       .or(userSearchRequestDTO.getSuffixName() != null, i -> i.likeLeft(User::getName, userSearchRequestDTO.getSuffixName()))
+                       .or(userSearchRequestDTO.getPhone() != null, i -> i.like(User::getPhone, userSearchRequestDTO.getPhone()))
+                       .or(userSearchRequestDTO.getGender() != null, i -> i.eq(User::getGender, userSearchRequestDTO.getGender()))
+                       .or(userSearchRequestDTO.getAddress() != null, i -> i.like(User::getAddress, userSearchRequestDTO.getAddress()))
+                );
+            }
+        }
+
+        wrapper.last("LIMIT " + userSearchRequestDTO.getOffset() + ", " + userSearchRequestDTO.getSize());
+        List<User> userList = baseMapper.selectList(wrapper);
+        userList.forEach(user -> user.setPasswordHash("---"));
+        return userList;
+    }
+
 }

@@ -4,14 +4,19 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import zxylearn.bcnlserver.common.UserContext;
+import zxylearn.bcnlserver.pojo.DTO.UserSearchRequestDTO;
 import zxylearn.bcnlserver.pojo.DTO.UserUpdateRequestDTO;
 import zxylearn.bcnlserver.pojo.entity.User;
 import zxylearn.bcnlserver.service.UserService;
@@ -58,7 +63,22 @@ public class UserController {
             return ResponseEntity.status(500).body(Map.of("error", "更新用户信息失败"));
         }
 
-        return ResponseEntity.ok("");
+        return ResponseEntity.ok(Map.of("user", user));
     }
 
+    @Operation(summary = "获取用户信息")
+    @GetMapping("get-info")
+    public ResponseEntity<?> getUserInfo(@RequestParam Long userId) {
+        User user = userService.getById(userId);
+        if(user == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "用户不存在"));
+        }
+        return ResponseEntity.ok(Map.of("user", user));
+    }
+
+    @Operation(summary = "查询用户")
+    @PostMapping("/search")
+    public ResponseEntity<?> searchUser(@RequestBody @Valid UserSearchRequestDTO userSearchRequestDTO) {
+        return ResponseEntity.ok(Map.of("userList", userService.searchUserList(userSearchRequestDTO)));
+    }
 }

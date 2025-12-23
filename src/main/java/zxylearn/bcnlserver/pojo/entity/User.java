@@ -42,7 +42,7 @@ public class User {
     private String phone;
 
     @TableField(value = "gender")
-    private Integer gender;
+    private Integer gender; // 0 女 1 男
 
     @TableField(value = "address")
     private String address;
