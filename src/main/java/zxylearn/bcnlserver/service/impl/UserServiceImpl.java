@@ -74,7 +74,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                               userSearchRequestDTO.getAdmin() != null;
 
         if (hasCriteria) {
-            if (Boolean.TRUE.equals(userSearchRequestDTO.getMatchAll())) {
+            if (userSearchRequestDTO.getMatchAll()) {
                 wrapper.eq(userSearchRequestDTO.getId() != null, User::getId, userSearchRequestDTO.getId())
                        .eq(userSearchRequestDTO.getUsername() != null, User::getUsername, userSearchRequestDTO.getUsername())
                        .eq(userSearchRequestDTO.getEmail() != null, User::getEmail, userSearchRequestDTO.getEmail())
@@ -106,5 +106,4 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         userList.forEach(user -> user.setPasswordHash("---"));
         return userList;
     }
-
 }
