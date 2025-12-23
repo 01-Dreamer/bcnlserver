@@ -299,6 +299,30 @@ public class TeamController {
         return ResponseEntity.ok(Map.of("teamMember", teamMember));
     }
 
+    @Operation(summary = "退出团队")
+    @PostMapping("/leave")
+    public ResponseEntity<?> leaveTeam(@RequestParam Long teamId) {
+
+        Long userId = Long.parseLong(UserContext.getUserId());
+
+        Team team = teamService.getById(teamId);
+        if(team == null || team.getStatus() != 1) {
+            return ResponseEntity.status(404).body(Map.of("error", "团队不存在或已被删除"));
+        }
+
+        TeamMember teamMember = teamMemberService.getTeamMember(teamId, userId);
+        if(teamMember == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "你不是团队成员"));
+        }
+
+        // 退出团队
+        if(!teamMemberService.removeById(teamMember.getId())) {
+            return ResponseEntity.status(500).body(Map.of("error", "退出团队失败"));
+        }
+
+        return ResponseEntity.ok(Map.of("teamMember", teamMember));
+    }
+
     @Operation(summary = "更新团队信息")
     @PutMapping("/update-info")
     public ResponseEntity<?> updateTeamInfo(@RequestBody TeamUpdateRequestDTO teamUpdateRequestDTO) {
@@ -332,7 +356,6 @@ public class TeamController {
     @PutMapping("/update-member-position")
     public ResponseEntity<?> updateTeamMemberPosition(@RequestParam Long teamId, @RequestParam Long memberId, @RequestParam String position) {
 
-
         Long userId = Long.parseLong(UserContext.getUserId());
         String role = UserContext.getUserRole();
 
@@ -356,5 +379,55 @@ public class TeamController {
         }
 
         return ResponseEntity.ok(Map.of("teamMember", teamMember));
+    }
+
+    @Operation(summary = "获取团队列表")
+    @PostMapping("/get-list")
+    public ResponseEntity<?> getTeamList(@RequestParam(required = false) Integer status) {
+        return ResponseEntity.ok(Map.of("teamList", teamService.getTeamListByStatus(status)));
+    }
+
+    @Operation(summary = "获取团队信息")
+    @PostMapping("/get-info")
+    public ResponseEntity<?> getTeamInfo(@RequestParam Long teamId) {
+        Team team = teamService.getById(teamId);
+        if(team == null || !team.getStatus().equals(1)) {
+            return ResponseEntity.status(404).body(Map.of("error", "团队不存在或已被删除"));
+        }
+
+        return ResponseEntity.ok(Map.of("team", team));
+    }
+
+    @Operation(summary = "获取团队成员列表")
+    @PostMapping("/get-members")
+    public ResponseEntity<?> getTeamMembers(@RequestParam Long teamId) {
+
+        Long userId = Long.parseLong(UserContext.getUserId());
+        String role = UserContext.getUserRole();
+
+        // 检查是否是团队成员
+        if(role.equals(JwtUtil.USER) && teamMemberService.getTeamMember(teamId, userId) == null) {
+            return ResponseEntity.status(403).body(Map.of("error", "无权限操作"));
+        }
+
+        return ResponseEntity.ok(Map.of("teamMemberList", teamMemberService.getTeamMemberList(teamId)));
+    }
+
+    @Operation(summary = "获取团队加入申请列表")
+    @PostMapping("/get-join-applications")
+    public ResponseEntity<?> getTeamJoinApplications(@RequestParam Long teamId) {
+        Long userId = Long.parseLong(UserContext.getUserId());
+        String role = UserContext.getUserRole();
+
+        Team team = teamService.getById(teamId);
+        if(team == null || team.getStatus() != 1) {
+            return ResponseEntity.status(404).body(Map.of("error", "团队不存在或已被删除"));
+        }
+
+        if(role.equals(JwtUtil.USER) && !userId.equals(team.getOwnerId())) {
+            return ResponseEntity.status(403).body(Map.of("error", "无权限操作"));
+        }
+
+        return ResponseEntity.ok(Map.of("teamJoinApplyList", teamJoinApplyService.getTeamJoinApplyList(teamId)));
     }
 }

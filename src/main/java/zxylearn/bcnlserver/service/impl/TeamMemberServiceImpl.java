@@ -1,6 +1,9 @@
 package zxylearn.bcnlserver.service.impl;
 
+import zxylearn.bcnlserver.pojo.DTO.TeamMemberVO;
 import zxylearn.bcnlserver.pojo.entity.TeamMember;
+
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -21,5 +24,10 @@ public class TeamMemberServiceImpl extends ServiceImpl<TeamMemberMapper, TeamMem
         return getOne(new LambdaQueryWrapper<TeamMember>()
                 .eq(TeamMember::getTeamId, teamId)
                 .eq(TeamMember::getMemberId, memberId));
+    }
+
+    @Override
+    public List<TeamMemberVO> getTeamMemberList(Long teamId) {
+        return baseMapper.selectTeamMembers(teamId);
     }
 }

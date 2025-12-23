@@ -1,5 +1,6 @@
 package zxylearn.bcnlserver.service.impl;
 
+import zxylearn.bcnlserver.pojo.DTO.TeamMemberVO;
 import zxylearn.bcnlserver.pojo.DTO.UserSearchRequestDTO;
 import zxylearn.bcnlserver.pojo.entity.User;
 
@@ -53,8 +54,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public List<User> searchUserList(UserSearchRequestDTO userSearchRequestDTO) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        
         LocalDate now = LocalDate.now();
-
         if (userSearchRequestDTO.getMinAge() != null) {
             wrapper.le(User::getBirthday, now.minusYears(userSearchRequestDTO.getMinAge()));
         }

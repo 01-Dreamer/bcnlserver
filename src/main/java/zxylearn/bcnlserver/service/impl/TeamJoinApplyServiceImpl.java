@@ -1,6 +1,9 @@
 package zxylearn.bcnlserver.service.impl;
 
+import zxylearn.bcnlserver.pojo.DTO.TeamJoinApplyVO;
 import zxylearn.bcnlserver.pojo.entity.TeamJoinApply;
+
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -23,5 +26,10 @@ public class TeamJoinApplyServiceImpl extends ServiceImpl<TeamJoinApplyMapper, T
                 .eq(TeamJoinApply::getApplicantId, applicantId)
                 .eq(TeamJoinApply::getStatus, 0)
         );
+    }
+
+    @Override
+    public List<TeamJoinApplyVO> getTeamJoinApplyList(Long teamId) {
+        return baseMapper.selectTeamJoinApplies(teamId);
     }
 }
