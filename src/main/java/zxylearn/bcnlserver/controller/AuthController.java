@@ -238,7 +238,7 @@ public class AuthController {
         String oldPassword = changePasswordRequestDTO.getOldPassword();
         String newPassword = changePasswordRequestDTO.getNewPassword();
 
-        // 获取当前用户
+        // 获取用户
         User user = userService.getUserByUsernameOrEmail(username);
         if(user == null) {
             return ResponseEntity.status(404).body(Map.of("error", "用户不存在"));
