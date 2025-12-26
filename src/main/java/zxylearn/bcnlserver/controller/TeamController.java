@@ -3,6 +3,11 @@ package zxylearn.bcnlserver.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import zxylearn.bcnlserver.common.UserContext;
 import zxylearn.bcnlserver.pojo.DTO.TeamCreateRequestDTO;
+import zxylearn.bcnlserver.pojo.DTO.TeamMemberVO;
 import zxylearn.bcnlserver.pojo.DTO.TeamUpdateRequestDTO;
 import zxylearn.bcnlserver.pojo.entity.Team;
 import zxylearn.bcnlserver.pojo.entity.TeamJoinApply;
@@ -233,6 +239,103 @@ public class TeamController {
         }
 
         return ResponseEntity.ok(Map.of("teamJoinApply", teamJoinApply));
+    }
+
+    @Operation(summary = "获取团队二跳知识图谱（团队->成员->其他团队）")
+    @PostMapping("/graph")
+    public ResponseEntity<?> getTeamGraph(@RequestParam Long teamId) {
+        Team team = teamService.getById(teamId);
+        if (team == null || team.getStatus() == null || team.getStatus() != 1) {
+            return ResponseEntity.status(404).body(Map.of("error", "团队不存在或未通过审核"));
+        }
+
+        List<Map<String, Object>> nodes = new ArrayList<>();
+        List<Map<String, Object>> links = new ArrayList<>();
+        Set<String> nodeIds = new HashSet<>();
+        Set<String> linkKeys = new HashSet<>();
+        Map<Long, Team> teamCache = new HashMap<>();
+
+        Supplier<Map<Long, Team>> cacheSupplier = () -> teamCache;
+
+        // helper to add node
+        var addNode = (java.util.function.BiConsumer<Map<String, Object>, Integer>) (node, symbolSize) -> {
+            String id = (String) node.get("id");
+            if (nodeIds.add(id)) {
+                if (symbolSize != null) {
+                    node.put("symbolSize", symbolSize);
+                }
+                nodes.add(node);
+            }
+        };
+
+        // helper to add link
+        java.util.function.Consumer<Map<String, String>> addLink = link -> {
+            String key = link.get("source") + "->" + link.get("target");
+            if (linkKeys.add(key)) {
+                links.add(new HashMap<>(link));
+            }
+        };
+
+        // center team node
+        addNode.accept(new HashMap<>(Map.of(
+                "id", "team:" + team.getId(),
+                "name", team.getName(),
+                "category", "Org"
+        )), 42);
+
+        // members
+        List<TeamMemberVO> members = teamMemberService.getTeamMemberList(teamId);
+        for (TeamMemberVO member : members) {
+            if (member.getUser() == null || member.getUser().getId() == null) {
+                continue;
+            }
+            Long memberId = member.getUser().getId();
+            String memberName = member.getUser().getName() != null && !member.getUser().getName().isEmpty()
+                    ? member.getUser().getName()
+                    : member.getUser().getUsername();
+            String memberNodeId = "user:" + memberId;
+
+            addNode.accept(new HashMap<>(Map.of(
+                    "id", memberNodeId,
+                    "name", memberName != null ? memberName : "User " + memberId,
+                    "category", "Member"
+            )), 28);
+
+            addLink.accept(Map.of(
+                    "source", "team:" + team.getId(),
+                    "target", memberNodeId
+            ));
+
+            // other teams this member joined (excluding current, excluding deleted/rejected)
+            List<Long> joinedTeamIds = teamMemberService.getTeamIdsByMemberId(memberId);
+            for (Long otherTeamId : joinedTeamIds) {
+                if (otherTeamId == null || otherTeamId.equals(teamId)) {
+                    continue;
+                }
+
+                Team otherTeam = cacheSupplier.get().computeIfAbsent(otherTeamId, id -> teamService.getById(id));
+                if (otherTeam == null || otherTeam.getStatus() == null || otherTeam.getStatus() != 1) {
+                    continue; // skip non-approved/deleted
+                }
+
+                String otherTeamNodeId = "team:" + otherTeam.getId();
+                addNode.accept(new HashMap<>(Map.of(
+                        "id", otherTeamNodeId,
+                        "name", otherTeam.getName(),
+                        "category", "Related Org"
+                )), 34);
+
+                addLink.accept(Map.of(
+                        "source", memberNodeId,
+                        "target", otherTeamNodeId
+                ));
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "nodes", nodes,
+                "links", links
+        ));
     }
 
     @Operation(summary = "拒绝加入团队申请")
